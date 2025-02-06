@@ -15,6 +15,7 @@ jobs:
     steps:
       - name: Checkout código desde Bitbucket
         run: |
+          echo $secrets.BITBUCKET_ACCESS_TOKEN
           echo "Voy a clonar el repo"
           git clone --depth 1 https://x-token-auth:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
           cd appprovandroid
