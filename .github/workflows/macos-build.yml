@@ -19,8 +19,6 @@ jobs:
         run: |
           echo "Voy a clonar el repo"
           git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
-          cd appprovandroid
-          cd ios
 
       # Cache de Flutter SDK
       - name: Cache Flutter SDK
@@ -51,35 +49,19 @@ jobs:
       - name: Exportar Flutter al PATH
         run: |
           echo "Agregando Flutter al PATH"
-          echo "export PATH=\$PATH:\$HOME/flutter/bin" >> $HOME/.bash_profile
-          source $HOME/.bash_profile
+          export PATH="$PATH:$HOME/flutter/bin"
           flutter doctor
-
-
-      # Verificar la instalación de Flutter
-      - name: Verificar Flutter
-        run: |
           flutter --version
-          flutter doctor || { echo 'Flutter no está disponible'; exit 1; }
-
-      # Instalar dependencias de Flutter
-      - name: Instalar dependencias de Flutter
-        run: |
+          pwd
+          cd appprovandroid
           echo "Instalando dependencias de Flutter"
           flutter pub get
-
-      # Instalar Fastlane
-      - name: Instalar Fastlane
-        run: |
           echo "Instalando Fastlane"
           gem install fastlane
-
-      # Ejecutar Fastlane ios beta
-      - name: Ejecutar Fastlane ios beta
-        run: |
           echo "Ejecutando fastlane ios beta"
           cd ios
           fastlane ios beta
+
 
       # Guardar caché de dependencias
       - name: Guardar caché de dependencias
