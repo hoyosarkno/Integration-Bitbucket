@@ -12,15 +12,54 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+
     steps:
-      - name: Checkout código desde Bitbucket
+      - name: Descargar código fuente
         run: |
           echo "Voy a clonar el repo"
           git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
           cd appprovandroid
-          ls
-          
+          cd ios
 
-      - name: Ejecutar pruebas en macOS
+      - name: Cache Flutter SDK
+        uses: actions/cache@v3
+        with:
+          path: ~/.flutter
+          key: flutter-${{ runner.os }}-${{ hashFiles('**/flutter/version') }}
+          restore-keys: |
+            flutter-${{ runner.os }}-
+
+      - name: Instalar Flutter 3.22.3
         run: |
-          echo "Ejecutando pruebas en MacOS"
+          echo "Instalando Flutter 3.22.3"
+          git clone https://github.com/flutter/flutter.git -b stable --depth 1
+          cd flutter
+          git checkout 3.22.3
+          export PATH="$PATH:`pwd`/bin"
+          flutter doctor
+
+      - name: Instalar dependencias de Flutter
+        run: |
+          echo "Instalando dependencias de Flutter"
+          flutter pub get
+
+      - name: Instalar Fastlane
+        run: |
+          echo "Instalando Fastlane"
+          gem install fastlane
+
+      - name: Ejecutar Fastlane ios beta
+        run: |
+          echo "Ejecutando fastlane ios beta"
+          cd ios
+          fastlane ios beta
+
+      - name: Guardar caché de dependencias
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            ios/Pods
+          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.yaml', '**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-
