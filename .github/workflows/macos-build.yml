@@ -51,8 +51,10 @@ jobs:
       - name: Exportar Flutter al PATH
         run: |
           echo "Agregando Flutter al PATH"
-          export PATH="$PATH:$HOME/flutter/bin"
+          echo "export PATH=\$PATH:\$HOME/flutter/bin" >> $HOME/.bash_profile
+          source $HOME/.bash_profile
           flutter doctor
+
 
       # Verificar la instalación de Flutter
       - name: Verificar Flutter
