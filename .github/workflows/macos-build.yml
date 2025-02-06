@@ -14,6 +14,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      # Descargar código fuente
       - name: Descargar código fuente
         run: |
           echo "Voy a clonar el repo"
@@ -21,6 +22,7 @@ jobs:
           cd appprovandroid
           cd ios
 
+      # Cache de Flutter SDK
       - name: Cache Flutter SDK
         uses: actions/cache@v3
         with:
@@ -29,31 +31,50 @@ jobs:
           restore-keys: |
             flutter-${{ runner.os }}-
 
+      # Descargar e instalar Flutter 3.22.3 si no está en caché
       - name: Instalar Flutter 3.22.3
         run: |
           echo "Instalando Flutter 3.22.3"
-          git clone https://github.com/flutter/flutter.git -b stable --depth 1
-          cd flutter
-          git checkout 3.22.3
-          export PATH="$PATH:`pwd`/bin"
+          if [ ! -d "/opt/flutter" ]; then
+            echo "Descargando Flutter SDK..." 
+            curl -LO https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.22.3-stable.tar.xz
+            tar xf flutter_macos_3.22.3-stable.tar.xz
+            mv flutter /opt/flutter
+          fi
+
+      # Agregar Flutter al PATH
+      - name: Exportar Flutter al PATH
+        run: |
+          echo "Agregando Flutter al PATH"
+          export PATH="$PATH:/opt/flutter/bin"
           flutter doctor
 
+      # Verificar la instalación de Flutter
+      - name: Verificar Flutter
+        run: |
+          flutter --version
+          flutter doctor || { echo 'Flutter no está disponible'; exit 1; }
+
+      # Instalar dependencias de Flutter
       - name: Instalar dependencias de Flutter
         run: |
           echo "Instalando dependencias de Flutter"
           flutter pub get
 
+      # Instalar Fastlane
       - name: Instalar Fastlane
         run: |
           echo "Instalando Fastlane"
           gem install fastlane
 
+      # Ejecutar Fastlane ios beta
       - name: Ejecutar Fastlane ios beta
         run: |
           echo "Ejecutando fastlane ios beta"
           cd ios
           fastlane ios beta
 
+      # Guardar caché de dependencias
       - name: Guardar caché de dependencias
         uses: actions/cache@v3
         with:
