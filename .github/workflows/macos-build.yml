@@ -31,16 +31,16 @@ jobs:
           restore-keys: |
             flutter-${{ runner.os }}-
 
-      # Descargar e instalar Flutter 3.22.3 si no está en caché
+      # Descargar e instalar Flutter 3.22.3 en un directorio accesible
       - name: Instalar Flutter 3.22.3
         run: |
           echo "Instalando Flutter 3.22.3"
-          if [ ! -d "/opt/flutter" ]; then
+          if [ ! -d "$HOME/flutter" ]; then
             echo "Descargando Flutter SDK..."
             curl -LO https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.22.3-stable.zip
             if [ $? -eq 0 ]; then
               echo "Descarga exitosa, descomprimiendo archivo..."
-              unzip flutter_macos_3.22.3-stable.zip -d /opt
+              unzip flutter_macos_3.22.3-stable.zip -d $HOME
             else
               echo "Error en la descarga del archivo"
               exit 1
@@ -51,7 +51,7 @@ jobs:
       - name: Exportar Flutter al PATH
         run: |
           echo "Agregando Flutter al PATH"
-          export PATH="$PATH:/opt/flutter/bin"
+          export PATH="$PATH:$HOME/flutter/bin"
           flutter doctor
 
       # Verificar la instalación de Flutter
