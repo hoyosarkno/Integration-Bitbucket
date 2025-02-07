@@ -52,16 +52,33 @@ jobs:
           export PATH="$PATH:$HOME/flutter/bin"
           flutter doctor
           flutter --version
-          pwd
+
+      # Instalar dependencias de Flutter
+      - name: Instalar dependencias de Flutter
+        run: |
           cd appprovandroid
           echo "Instalando dependencias de Flutter"
           flutter pub get
+
+      # Instalar Fastlane
+      - name: Instalar Fastlane
+        run: |
           echo "Instalando Fastlane"
           gem install fastlane
-          echo "Ejecutando fastlane ios beta"
-          cd ios
-          fastlane ios beta
 
+      # Seleccionar la versión de Xcode
+      - name: Seleccionar versión de Xcode
+        run: |
+          echo "Seleccionando Xcode 15.2"
+          sudo xcode-select --switch /Applications/Xcode_15.2.app/Contents/Developer
+          xcodebuild -version
+
+      # Ejecutar Fastlane
+      - name: Ejecutar Fastlane
+        run: |
+          cd appprovandroid/ios
+          echo "Ejecutando fastlane ios beta"
+          fastlane ios beta
 
       # Guardar caché de dependencias
       - name: Guardar caché de dependencias
