@@ -45,6 +45,12 @@ jobs:
             fi
           fi
 
+      # Instalar Fastlane
+      - name: Instalar Fastlane
+        run: |
+          echo "Instalando Fastlane"
+          gem install fastlane
+
       # Agregar Flutter al PATH
       - name: Exportar Flutter al PATH
         run: |
@@ -52,19 +58,11 @@ jobs:
           export PATH="$PATH:$HOME/flutter/bin"
           flutter doctor
           flutter --version
-
-      # Instalar dependencias de Flutter
-      - name: Instalar dependencias de Flutter
-        run: |
           cd appprovandroid
           echo "Instalando dependencias de Flutter"
           flutter pub get
+          
 
-      # Instalar Fastlane
-      - name: Instalar Fastlane
-        run: |
-          echo "Instalando Fastlane"
-          gem install fastlane
 
       # Seleccionar la versión de Xcode
       - name: Seleccionar versión de Xcode
