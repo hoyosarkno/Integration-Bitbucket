@@ -55,12 +55,15 @@ jobs:
         with:
           flutter-version: '3.22.3'
 
-      # Ejecuta Flutter y Fastlane
-      - name: Run Flutter pub get and Fastlane
+      # Ejecuta Flutter pub get
+      - name: Run flutter pub get
         working-directory: ./appprovandroid
-        run: |
-          flutter pub get
-          fastlane beta
+        run: flutter pub get
+
+      # Ejecuta Fastlane beta desde carpeta iOS
+      - name: Run Fastlane beta
+        working-directory: ./appprovandroid/ios
+        run: fastlane beta
 
       # Limpieza
       - name: Clean up keychain and provisioning profile
