@@ -16,14 +16,14 @@ jobs:
         run: |
           git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
           cd appprovandroid
-          
+
       # Configura Ruby y Bundler
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2.2
           bundler-cache: true
-          
+
       # Instala dependencias en la carpeta ios
       - name: Install Fastlane dependencies
         working-directory: ./appprovandroid/ios
@@ -40,12 +40,17 @@ jobs:
         working-directory: ./appprovandroid
         run: flutter pub get
 
+      # Instala los pods (necesario para evitar errores de xcfilelist)
+      - name: Run pod install
+        working-directory: ./appprovandroid/ios
+        run: pod install
+
       # Ejecuta el build con Fastlane (usando Automatic Signing)
       - name: Run Fastlane beta with Automatic Signing
         working-directory: ./appprovandroid/ios
         env:
           FASTLANE_USER: ${{ secrets.APPLE_ID }}
           FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}  # Necesario para Automatic Signing
+          FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           bundle exec fastlane beta
