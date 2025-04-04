@@ -16,8 +16,8 @@ jobs:
         uses: actions/checkout@v2
 
       # Verifica la ruta actual
-      - name: Show current directory
-        run: pwd
+      - name: List directories
+        run: ls
 
       # Verifica la versión de Fastlane
       - name: Check Fastlane version
