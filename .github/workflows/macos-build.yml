@@ -1,4 +1,4 @@
-name: "[DEV] Build and Publish iOS"
+name: "[DEV] Build and Publish iOS with Automatic Signing"
 
 on:
   push:
@@ -29,17 +29,6 @@ jobs:
         working-directory: ./appprovandroid/ios
         run: bundle install
 
-      # Configura match
-      - name: Setup Match
-        working-directory: ./appprovandroid/ios
-        env:
-          FASTLANE_USER: ${{ secrets.APPLE_ID }}
-          FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          MATCH_PASSWORD: 'arknova'
-          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-        run: |
-          bundle exec fastlane match appstore --readonly
-          
       # Configura Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v1
@@ -51,12 +40,12 @@ jobs:
         working-directory: ./appprovandroid
         run: flutter pub get
 
-      # Ejecuta el build con Fastlane
-      - name: Run Fastlane beta
+      # Ejecuta el build con Fastlane (usando Automatic Signing)
+      - name: Run Fastlane beta with Automatic Signing
         working-directory: ./appprovandroid/ios
         env:
           FASTLANE_USER: ${{ secrets.APPLE_ID }}
           FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-          MATCH_PASSWORD: 'arknova'
-        run: bundle exec fastlane beta
+          FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}  # Necesario para Automatic Signing
+        run: |
+          bundle exec fastlane beta
