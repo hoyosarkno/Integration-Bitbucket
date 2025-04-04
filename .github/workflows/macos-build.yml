@@ -11,20 +11,15 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      # Clona el repositorio
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      # Verifica ruta actual y contenido
-      - name: Show current directory and list contents
+      # Clona tu repositorio de Bitbucket
+      - name: Descargar código fuente
         run: |
-          echo "Current path:"
+          echo "Voy a clonar el repo desde Bitbucket..."
+          git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
+          cd appprovandroid
+          echo "Directorio después de clonar:"
           pwd
-          echo "List current directory:"
           ls -la
-          echo "List subdirectories:"
-          ls -R | head -n 100
-
 
       # Verifica la versión de Fastlane
       - name: Check Fastlane version
@@ -62,6 +57,7 @@ jobs:
 
       # Ejecuta Flutter y Fastlane
       - name: Run Flutter pub get and Fastlane
+        working-directory: ./appprovandroid
         run: |
           flutter pub get
           fastlane beta
