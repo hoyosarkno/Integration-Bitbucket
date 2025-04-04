@@ -11,66 +11,50 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
-      # Clona tu repositorio de Bitbucket
+      # Clona tu repositorio
       - name: Descargar código fuente
         run: |
-          echo "Voy a clonar el repo desde Bitbucket..."
           git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
           cd appprovandroid
-          echo "Directorio después de clonar:"
-          pwd
-          ls -la
+          
+      # Configura Ruby y Bundler
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.2.2
+          bundler-cache: true
+          
+      # Instala dependencias en la carpeta ios
+      - name: Install Fastlane dependencies
+        working-directory: ./appprovandroid/ios
+        run: bundle install
 
-      # Verifica la versión de Fastlane
-      - name: Check Fastlane version
-        run: fastlane --version
-
-      # Instala certificado y perfil de aprovisionamiento
-      - name: Install the Apple certificate and provisioning profile
+      # Configura match
+      - name: Setup Match
+        working-directory: ./appprovandroid/ios
         env:
-          BUILD_CERTIFICATE_BASE64: ${{ secrets.APPSTORE_CERT_BASE64 }}
-          P12_PASSWORD: ''
-          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.MOBILEPROVISION_BASE64 }}
-          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          FASTLANE_USER: ${{ secrets.APPLE_ID }}
+          FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          MATCH_PASSWORD: ''
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
         run: |
-          CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-          PP_PATH=$RUNNER_TEMP/build_pp.mobileprovision
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-
-          echo -n "$BUILD_CERTIFICATE_BASE64" | base64 --decode --output $CERTIFICATE_PATH
-          echo -n "$BUILD_PROVISION_PROFILE_BASE64" | base64 --decode --output $PP_PATH
-
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security import $CERTIFICATE_PATH -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
-
-      # Instala Flutter 3.22.3
+          bundle exec fastlane match appstore --readonly
+          
+      # Configura Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v1
         with:
           flutter-version: '3.22.3'
 
-      # Ejecuta Flutter pub get
+      # Obtiene dependencias de Flutter
       - name: Run flutter pub get
         working-directory: ./appprovandroid
         run: flutter pub get
 
-      # Ejecuta Fastlane beta desde carpeta iOS
+      # Ejecuta el build con Fastlane
       - name: Run Fastlane beta
         working-directory: ./appprovandroid/ios
         env:
-          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }} # solo si usaste encriptación
-        run: fastlane beta
-
-      # Limpieza
-      - name: Clean up keychain and provisioning profile
-        if: ${{ always() }}
-        run: |
-          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db
-          rm ~/Library/MobileDevice/Provisioning\ Profiles/build_pp.mobileprovision
+          FASTLANE_USER: ${{ secrets.APPLE_ID }}
+          FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: bundle exec fastlane beta
