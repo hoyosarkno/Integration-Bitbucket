@@ -15,9 +15,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Verifica la ruta actual
-      - name: List directories
-        run: ls
+      # Verifica ruta actual y contenido
+      - name: Show current directory and list contents
+        run: |
+          echo "Current path:"
+          pwd
+          echo "List current directory:"
+          ls -la
+          echo "List subdirectories:"
+          ls -R | head -n 100
+
 
       # Verifica la versión de Fastlane
       - name: Check Fastlane version
