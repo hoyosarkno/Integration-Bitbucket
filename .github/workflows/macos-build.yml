@@ -11,9 +11,19 @@ jobs:
   build:
     runs-on: macos-latest
     steps:
+      # Clona el repositorio
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      # Verifica la ruta actual
+      - name: Show current directory
+        run: pwd
+
+      # Verifica la versión de Fastlane
+      - name: Check Fastlane version
+        run: fastlane --version
+
+      # Instala certificado y perfil de aprovisionamiento
       - name: Install the Apple certificate and provisioning profile
         env:
           BUILD_CERTIFICATE_BASE64: ${{ secrets.APPSTORE_CERT_BASE64 }}
@@ -37,26 +47,17 @@ jobs:
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
 
-      - name: Install Flutter 3.22.3
+      # Instala Flutter 3.22.3
+      - name: Set up Flutter
         uses: subosito/flutter-action@v1
         with:
           flutter-version: '3.22.3'
 
-      - name: Flutter pub get
-        run: flutter pub get
-
-      # Instala Ruby y Fastlane
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.1'
-
-      - name: Install Fastlane
-        run: gem install fastlane -NV
-
-      # Ejecuta la lane
-      - name: Run Fastlane beta lane
-        run: fastlane beta
+      # Ejecuta Flutter y Fastlane
+      - name: Run Flutter pub get and Fastlane
+        run: |
+          flutter pub get
+          fastlane beta
 
       # Limpieza
       - name: Clean up keychain and provisioning profile
