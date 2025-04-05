@@ -30,15 +30,14 @@ jobs:
           sudo xcode-select -s /Applications/Xcode.app
           sudo xcodebuild -license accept
 
-      # 3. Configura Ruby y Fastlane
+      # 3. Configura Ruby y Fastlane (corregido)
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2.2
           bundler-cache: true
-        working-directory: ./appprovandroid/ios
 
-      # 4. Instala dependencias de Fastlane
+      # 4. Instala dependencias de Fastlane (con working-directory correcto)
       - name: Install Fastlane dependencies
         working-directory: ./appprovandroid/ios
         run: bundle install
