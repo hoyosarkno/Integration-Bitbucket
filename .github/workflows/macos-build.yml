@@ -20,24 +20,21 @@ jobs:
       # 2. Configura el entorno de Xcode
       - name: Prepare Xcode Environment
         run: |
-          # Configura el keychain para code signing
           security create-keychain -p "" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "" build.keychain
           security set-keychain-settings -lut 3600
-          
-          # Selecciona Xcode y acepta licencia
           sudo xcode-select -s /Applications/Xcode.app
           sudo xcodebuild -license accept
 
-      # 3. Configura Ruby y Fastlane (corregido)
+      # 3. Configura Ruby
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2.2
           bundler-cache: true
 
-      # 4. Instala dependencias de Fastlane (con working-directory correcto)
+      # 4. Instala dependencias de Fastlane
       - name: Install Fastlane dependencies
         working-directory: ./appprovandroid/ios
         run: bundle install
@@ -53,22 +50,26 @@ jobs:
         working-directory: ./appprovandroid
         run: flutter pub get
 
-      # 7. Actualiza iOS Deployment Targets
+      # 7. Actualiza iOS Deployment Targets (CORREGIDO)
       - name: Update iOS Deployment Targets
         working-directory: ./appprovandroid/ios
         run: |
-          # Actualiza el deployment target en Podfile
+          # Actualiza Podfile
           sed -i '' "s/platform :ios, .*/platform :ios, '16.0'/g" Podfile
           
-          # Actualiza el deployment target en Xcode project
-          /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 16.0" Runner/Info.plist
+          # Actualiza Info.plist (versión robusta)
+          if /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" Runner/Info.plist >/dev/null 2>&1; then
+            /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 16.0" Runner/Info.plist
+          else
+            /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 16.0" Runner/Info.plist
+          fi
 
       # 8. Instala los pods
       - name: Run pod install
         working-directory: ./appprovandroid/ios
         run: pod install --repo-update
 
-      # 9. Ejecuta Fastlane con Automatic Signing
+      # 9. Ejecuta Fastlane
       - name: Run Fastlane beta with Automatic Signing
         working-directory: ./appprovandroid/ios
         env:
@@ -77,8 +78,5 @@ jobs:
           FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           MATCH_KEYCHAIN_PASSWORD: ""
         run: |
-          # Limpia builds previos
           rm -rf ~/Library/Developer/Xcode/DerivedData/*
-          
-          # Ejecuta el lane beta en modo verbose
           bundle exec fastlane ios beta --verbose
