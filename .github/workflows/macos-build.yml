@@ -40,12 +40,12 @@ jobs:
         working-directory: ./appprovandroid
         run: flutter pub get
 
-      # Instala los pods (necesario para evitar errores de xcfilelist)
+      # Instala los pods
       - name: Run pod install
         working-directory: ./appprovandroid/ios
         run: pod install
 
-      # Ejecuta el build con Fastlane (usando Automatic Signing)
+      # Ejecuta el build con Fastlane
       - name: Run Fastlane beta with Automatic Signing
         working-directory: ./appprovandroid/ios
         env:
@@ -53,4 +53,8 @@ jobs:
           FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # Selecciona el Xcode correcto
+          sudo xcode-select -s /Applications/Xcode.app
+          
+          # Ejecuta Fastlane
           bundle exec fastlane ios beta
