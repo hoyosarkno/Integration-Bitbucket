@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macOS-latest
     steps:
       # 1. Clona el repositorio de Bitbucket
       - name: Clone Bitbucket repository
@@ -17,15 +17,18 @@ jobs:
           git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
           cd appprovandroid
 
-      # 2. Configura el entorno de Xcode
-      - name: Prepare Xcode Environment
-        run: |
-          security create-keychain -p "" build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p "" build.keychain
-          security set-keychain-settings -lut 3600
-          sudo xcode-select -s /Applications/Xcode.app
-          sudo xcodebuild -license accept
+      # 2. Configura el acceso SSH
+      - uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.MATCH_REPO_KEY }}
+      
+      - name: Run Flutter tasks
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.3'
+      - run: flutter clean
+      - run: flutter pub get
+      - run: flutter build ios --release --no-codesign --no-tree-shake-icons
 
       # 3. Configura Ruby
       - name: Set up Ruby
@@ -33,50 +36,25 @@ jobs:
         with:
           ruby-version: 3.2.2
           bundler-cache: true
+          working-directory: 'ios'
 
       # 4. Instala dependencias de Fastlane
-      - name: Install Fastlane dependencies
-        working-directory: ./appprovandroid/ios
-        run: bundle install
-
-      # 5. Configura Flutter
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v1
+      - name: Deploy iOS Beta to TestFlight via Fastlane
+        uses: maierj/fastlane-action@v3.0.0
         with:
-          flutter-version: '3.22.3'
-
-      # 6. Instala dependencias de Flutter
-      - name: Run flutter pub get
-        working-directory: ./appprovandroid
-        run: flutter pub get
-
-      # 7. Actualiza iOS Deployment Targets (CORREGIDO)
-      - name: Update iOS Deployment Targets
-        working-directory: ./appprovandroid/ios
-        run: |
-          # Actualiza Podfile
-          sed -i '' "s/platform :ios, .*/platform :ios, '16.0'/g" Podfile
-          
-          # Actualiza Info.plist (versión robusta)
-          if /usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" Runner/Info.plist >/dev/null 2>&1; then
-            /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 16.0" Runner/Info.plist
-          else
-            /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 16.0" Runner/Info.plist
-          fi
-
-      # 8. Instala los pods
-      - name: Run pod install
-        working-directory: ./appprovandroid/ios
-        run: pod install --repo-update
-
-      # 9. Ejecuta Fastlane
-      - name: Run Fastlane beta with Automatic Signing
-        working-directory: ./appprovandroid/ios
+          lane: beta
+          subdirectory: ios
         env:
-          FASTLANE_USER: ${{ secrets.APPLE_ID }}
-          FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          MATCH_KEYCHAIN_PASSWORD: ""
-        run: |
-          rm -rf ~/Library/Developer/Xcode/DerivedData/*
-          bundle exec fastlane ios beta --verbose
+          TEMP_KEYCHAIN_USER: ${{ secrets.TEMP_KEYCHAIN_USER }}
+          TEMP_KEYCHAIN_PASSWORD: ${{ secrets.TEMP_KEYCHAIN_PASSWORD }}
+          APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+          APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+          GIT_AUTHORIZATION: ${{ secrets.GIT_AUTHORIZATION }}
+          APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APP_STORE_CONNECT_TEAM_ID: ${{ secrets.APP_STORE_CONNECT_TEAM_ID }}
+          DEV_PORTAL_TEAM_ID: ${{ secrets.DEV_PORTAL_TEAM_ID }}
+          GIT_CERTS_URL: ${{ secrets.GIT_CERTS_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_KEYCHAIN_PASSWORD: ${{ secrets.MATCH_KEYCHAIN_PASSWORD }}
