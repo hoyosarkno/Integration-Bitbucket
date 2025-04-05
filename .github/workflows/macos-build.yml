@@ -8,53 +8,70 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: macos-latest
     steps:
-      # Clona tu repositorio
-      - name: Descargar código fuente
-        run: |
-          git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
-          cd appprovandroid
+      # 1. Checkout del repositorio
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Configura Ruby y Bundler
+      # 2. Configura Ruby y Fastlane
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2.2
           bundler-cache: true
 
-      # Instala dependencias en la carpeta ios
-      - name: Install Fastlane dependencies
-        working-directory: ./appprovandroid/ios
-        run: bundle install
+      # 3. Configuración inicial del entorno
+      - name: Prepare Xcode Environment
+        run: |
+          # Configura el keychain para code signing
+          security create-keychain -p "" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security set-keychain-settings -lut 3600
+          
+          # Selecciona Xcode y acepta licencia
+          sudo xcode-select -s /Applications/Xcode.app
+          sudo xcodebuild -license accept
 
-      # Configura Flutter
+      # 4. Configura Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v1
         with:
           flutter-version: '3.22.3'
 
-      # Obtiene dependencias de Flutter
-      - name: Run flutter pub get
-        working-directory: ./appprovandroid
+      # 5. Instala dependencias de Flutter
+      - name: Install Flutter dependencies
         run: flutter pub get
 
-      # Instala los pods
-      - name: Run pod install
-        working-directory: ./appprovandroid/ios
-        run: pod install
+      # 6. Actualiza iOS Deployment Targets
+      - name: Update iOS Deployment Targets
+        working-directory: ./ios
+        run: |
+          # Actualiza el deployment target en Podfile
+          sed -i '' "s/platform :ios, .*/platform :ios, '16.0'/g" Podfile
+          
+          # Actualiza el deployment target en Xcode project
+          /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 16.0" Runner/Info.plist
 
-      # Ejecuta el build con Fastlane
-      - name: Run Fastlane beta with Automatic Signing
-        working-directory: ./appprovandroid/ios
+      # 7. Instala dependencias de CocoaPods
+      - name: Install CocoaPods dependencies
+        working-directory: ./ios
+        run: |
+          pod install --repo-update
+
+      # 8. Ejecuta Fastlane con Automatic Signing
+      - name: Build and upload to TestFlight
+        working-directory: ./ios
         env:
           FASTLANE_USER: ${{ secrets.APPLE_ID }}
           FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           FASTLANE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          MATCH_KEYCHAIN_PASSWORD: "" # Necesario para sync_code_signing
         run: |
-          # Selecciona el Xcode correcto
-          sudo xcode-select -s /Applications/Xcode.app
+          # Limpia derivados previos
+          rm -rf ~/Library/Developer/Xcode/DerivedData/*
           
-          # Ejecuta Fastlane
-          bundle exec fastlane ios beta
+          # Ejecuta el lane beta
+          bundle exec fastlane ios beta --verbose
