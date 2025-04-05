@@ -43,6 +43,7 @@ jobs:
 
       # 5. Instala dependencias de Flutter
       - name: Install Flutter dependencies
+        working-directory: ./appprovandroid
         run: flutter pub get
 
       # 6. Actualiza iOS Deployment Targets
