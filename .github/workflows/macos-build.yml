@@ -11,9 +11,11 @@ jobs:
   build-and-deploy:
     runs-on: macos-latest
     steps:
-      # 1. Checkout del repositorio
-      - name: Checkout code
-        uses: actions/checkout@v4
+      # 1. Clona el repositorio de Bitbucket
+      - name: Clone Bitbucket repository
+        run: |
+          git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
+          cd appprovandroid
 
       # 2. Configura Ruby y Fastlane
       - name: Set up Ruby
@@ -21,6 +23,7 @@ jobs:
         with:
           ruby-version: 3.2.2
           bundler-cache: true
+        working-directory: ./appprovandroid/ios
 
       # 3. Configuración inicial del entorno
       - name: Prepare Xcode Environment
@@ -48,7 +51,7 @@ jobs:
 
       # 6. Actualiza iOS Deployment Targets
       - name: Update iOS Deployment Targets
-        working-directory: ./ios
+        working-directory: ./appprovandroid/ios
         run: |
           # Actualiza el deployment target en Podfile
           sed -i '' "s/platform :ios, .*/platform :ios, '16.0'/g" Podfile
@@ -58,13 +61,13 @@ jobs:
 
       # 7. Instala dependencias de CocoaPods
       - name: Install CocoaPods dependencies
-        working-directory: ./ios
+        working-directory: ./appprovandroid/ios
         run: |
           pod install --repo-update
 
       # 8. Ejecuta Fastlane con Automatic Signing
       - name: Build and upload to TestFlight
-        working-directory: ./ios
+        working-directory: ./appprovandroid/ios
         env:
           FASTLANE_USER: ${{ secrets.APPLE_ID }}
           FASTLANE_APPLE_APPLICATION_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
