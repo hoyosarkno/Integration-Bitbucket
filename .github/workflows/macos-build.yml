@@ -36,35 +36,24 @@ jobs:
             appprovandroid/.dart_tool
           key: ${{ runner.os }}-flutter-${{ hashFiles('appprovandroid/pubspec.yaml') }}
 
-      # 5. Cache de CocoaPods
-      - name: Cache CocoaPods
-        uses: actions/cache@v3
-        with:
-          path: |
-            appprovandroid/ios/Pods
-            appprovandroid/ios/Podfile.lock
-          key: ${{ runner.os }}-pods-${{ hashFiles('appprovandroid/ios/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
-
-      # 6. Instala dependencias Flutter
+      # 5. Instala dependencias Flutter
       - name: Flutter pub get
         run: flutter pub get
         working-directory: appprovandroid
 
-      # 7. Build iOS sin clean (más rápido)
+      # 6. Build iOS sin clean (más rápido)
       - name: Flutter build iOS
         run: flutter build ios --release --no-codesign --no-tree-shake-icons --split-debug-info=build/ios/debug-info
         working-directory: appprovandroid
 
-      # 8. Cachea dependencias Ruby
+      # 7. Cachea dependencias Ruby
       - name: Cache Ruby gems
         uses: actions/cache@v3
         with:
           path: appprovandroid/ios/vendor/bundle
           key: ${{ runner.os }}-gems-${{ hashFiles('appprovandroid/ios/Gemfile.lock') }}
 
-      # 9. Configura Ruby y Bundler
+      # 8. Configura Ruby y Bundler
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -76,7 +65,7 @@ jobs:
         run: bundle install --path vendor/bundle
         working-directory: appprovandroid/ios
 
-      # 10. Despliega a TestFlight
+      # 9. Despliega a TestFlight
       - name: Deploy iOS Beta to TestFlight via Fastlane
         uses: maierj/fastlane-action@v3.0.0
         with:
