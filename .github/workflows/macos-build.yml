@@ -9,25 +9,31 @@ on:
 
 jobs:
   build:
-    runs-on: macOS-latest
+    runs-on: macos-14  # macOS Sonoma (Xcode 16+ preinstalado)
 
     steps:
-      # 1. Clona el repositorio de Bitbucket
+      # 1. Configura Xcode 16.3 explícitamente
+      - name: Select Xcode 16.3
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.3'  # SDK iOS 18+
+
+      # 2. Clona el repositorio
       - name: Clone Bitbucket repository
         run: git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
 
-      # 2. Configura el acceso SSH
+      # 3. Configura SSH para Fastlane Match
       - uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.MATCH_REPO_KEY }}
 
-      # 3. Configura Flutter
+      # 4. Configura Flutter (versión compatible con Xcode 16)
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.3'
+          flutter-version: '3.22.3'  # Actualiza a 'stable' si es necesario
 
-      # 4. Cachea dependencias de Flutter
+      # 5. Cache de dependencias de Flutter
       - name: Cache Flutter dependencies
         uses: actions/cache@v3
         with:
@@ -36,24 +42,24 @@ jobs:
             appprovandroid/.dart_tool
           key: ${{ runner.os }}-flutter-${{ hashFiles('appprovandroid/pubspec.yaml') }}
 
-      # 5. Instala dependencias Flutter
+      # 6. Instala dependencias
       - name: Flutter pub get
         run: flutter pub get
         working-directory: appprovandroid
 
-      # 6. Build iOS sin clean (más rápido)
+      # 7. Build iOS con SDK iOS 18+
       - name: Flutter build iOS
         run: flutter build ios --release --no-codesign --no-tree-shake-icons --split-debug-info=build/ios/debug-info
         working-directory: appprovandroid
 
-      # 7. Cachea dependencias Ruby
+      # 8. Cache de Ruby gems
       - name: Cache Ruby gems
         uses: actions/cache@v3
         with:
           path: appprovandroid/ios/vendor/bundle
           key: ${{ runner.os }}-gems-${{ hashFiles('appprovandroid/ios/Gemfile.lock') }}
 
-      # 8. Configura Ruby y Bundler
+      # 9. Configura Ruby y Bundler
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -65,7 +71,7 @@ jobs:
         run: bundle install --path vendor/bundle
         working-directory: appprovandroid/ios
 
-      # 9. Despliega a TestFlight
+      # 10. Despliega a TestFlight (Fastlane)
       - name: Deploy iOS Beta to TestFlight via Fastlane
         uses: maierj/fastlane-action@v3.0.0
         with:
