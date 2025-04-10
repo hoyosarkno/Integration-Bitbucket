@@ -3,8 +3,7 @@ name: "[DEV] Build and Publish iOS with Automatic Signing"
 on:
   push:
     branches:
-      - main
-      - develop
+      - prod
   workflow_dispatch:
 
 jobs:
@@ -20,7 +19,7 @@ jobs:
 
       # 2. Clona el repositorio
       - name: Clone Bitbucket repository
-        run: git clone -b Test --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
+        run: git clone -b Prod --single-branch https://${{ secrets.BITBUCKET_USER }}:${{ secrets.BITBUCKET_ACCESS_TOKEN }}@bitbucket.org/svillaquiral/appprovandroid.git
 
       # 3. Configura SSH para Fastlane Match
       - uses: webfactory/ssh-agent@v0.7.0
@@ -82,7 +81,7 @@ jobs:
           TEMP_KEYCHAIN_PASSWORD: ${{ secrets.TEMP_KEYCHAIN_PASSWORD }}
           APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
           APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
-          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER }}
+          APP_IDENTIFIER: ${{ secrets.APP_IDENTIFIER_PROD }}
           GIT_AUTHORIZATION: ${{ secrets.GIT_AUTHORIZATION }}
           APPLE_KEY_CONTENT: ${{ secrets.APPLE_KEY_CONTENT }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
